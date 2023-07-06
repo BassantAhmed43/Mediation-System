@@ -219,9 +219,7 @@ public class Bsmalah {
   
     }
 
- 
-
-
+  
 //    public static List<String> listFilesOnSCPServer(String serverIp, int port, String username, String password, String remoteFilePath) {
 //        List<String> fileNames = new ArrayList<>();
 //
@@ -294,6 +292,84 @@ public class Bsmalah {
 }
 
 
+public static void deleteFileOnSCPClient(String server, int port, String username, String password, String filePath) {
+    try {
+        JSch jsch = new JSch();
+
+        // Create a session to the SCP server
+        Session session = jsch.getSession(username, server, port);
+        session.setPassword(password);
+        session.setConfig("StrictHostKeyChecking", "no");
+        session.connect();
+
+        // Create an SCP channel
+        Channel channel = session.openChannel("exec");
+
+        // Construct the command to delete the file
+        String command = "rm " + filePath;
+
+        // Set the command on the channel
+        ((ChannelExec) channel).setCommand(command);
+
+        // Connect the channel
+        channel.connect();
+
+        // Wait for the command to finish executing
+        while (!channel.isClosed()) {
+            Thread.sleep(100);
+        }
+
+        // Check the exit status of the command
+        int exitStatus = channel.getExitStatus();
+        if (exitStatus == 0) {
+            // The file was deleted successfully
+            System.out.println("File deleted successfully");
+        } else {
+            // The file could not be deleted
+            System.out.println("File could not be deleted");
+        }
+
+        // Disconnect the channel and session
+        channel.disconnect();
+        session.disconnect();
+    } catch (JSchException | InterruptedException e) {
+        e.printStackTrace();
+    }
+}
+    
+    public static List<String> listFilesSCPServer(String serverIp, int port, String username, String password, String remoteFilePath) {
+        List<String> fileNames = new ArrayList<>();
+
+        try {
+            JSch jsch = new JSch();
+            Session session = jsch.getSession(username, serverIp, port);
+            session.setPassword(password);
+            session.setConfig("StrictHostKeyChecking", "no");
+            session.connect();
+
+            ChannelSftp sftp = (ChannelSftp) session.openChannel("sftp");
+            sftp.connect();
+
+            // Get a list of all the files in the specified path
+            Vector<ChannelSftp.LsEntry> entries = sftp.ls(remoteFilePath);
+
+            // Extract file names excluding "." and ".." entries
+            for (ChannelSftp.LsEntry entry : entries) {
+                String filename = entry.getFilename();
+                if (filename.equals(".") || filename.equals("..")) {
+                    continue; // Skip the current and parent directory entries
+                }
+                fileNames.add(filename);
+            }
+
+            sftp.disconnect();
+            session.disconnect();
+        } catch (JSchException | SftpException e) {
+            e.printStackTrace();
+        }
+
+        return fileNames;
+    }
 
 
 //    ________
@@ -535,6 +611,38 @@ public class Bsmalah {
     }
 //    _______
 
+    public static List<String> getFilePathsOnFTPServer(String server, int port, String username, String password, String directory) {
+        FTPClient ftp = new FTPClient();
+        List<String> filePathList = new ArrayList<>();
+
+        try {
+            // Connect to the FTP server
+            ftp.connect(server, port);
+            ftp.login(username, password);
+
+            // Change working directory
+            ftp.changeWorkingDirectory(directory);
+
+            // Get the file list
+            FTPFile[] files = ftp.listFiles();
+
+            // Add file paths to the list
+            if (files != null) {
+                for (FTPFile file : files) {
+                    String filePath = directory + "/" + file.getName();
+                    filePathList.add(filePath);
+                }
+            }
+
+            // Disconnect from the FTP server
+            ftp.logout();
+            ftp.disconnect();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return filePathList;
+    }
 
 
     public static int countFilesOnFTPServer(String server, int port, String username, String password, String directory) {
