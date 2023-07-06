@@ -219,7 +219,266 @@ public class Bsmalah {
   
     }
 
-  
+    static void uploadToScpServer(String username, String hostname, int port, String password,
+            String localFolderPath, String remoteFolderPath) {
+        Session session = null;
+        ChannelSftp channelSftp = null;
+        JSch jsch = new JSch();
+        try {
+            session = jsch.getSession(username, hostname, port);
+            session.setPassword(password);
+            Properties config = new Properties();
+            config.put("StrictHostKeyChecking", "no");
+            session.setConfig(config);
+            session.connect();
+            System.out.println("Session connected");
+
+            channelSftp = (ChannelSftp) session.openChannel("sftp");
+            channelSftp.connect();
+            System.out.println("Connected");
+
+            java.io.File localFolder = new java.io.File(localFolderPath);
+            java.io.File[] files = localFolder.listFiles();
+
+            if (files != null) {
+                for (java.io.File file : files) {
+                    if (file.isFile()) {
+                        String localFilePath = file.getAbsolutePath();
+                        String remoteFilePath = remoteFolderPath + "/" + file.getName();
+                        channelSftp.put(localFilePath, remoteFilePath);
+                        System.out.println("Uploaded: " + file.getName());
+
+                    }
+                }
+            }
+
+            System.out.println("Files uploaded to SCP Server successfully.");
+       
+         try {
+                Class.forName("org.postgresql.Driver");
+                Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/med", "aya", "123");
+                System.out.println("Connected");
+                LocalDateTime currentDateTime = getCurrentDateTime();
+                Statement stmt = con.createStatement();
+                String queryString = "insert into logs values ('" + currentDateTime + "' , '" + hostname + "' , '" + remoteFolderPath + "' ,'" + localFolderPath + "' )";
+                stmt.executeUpdate(queryString);
+            } catch (ClassNotFoundException | SQLException ex) {
+                Logger.getLogger(Bsmalah.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        
+        
+        
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (channelSftp != null) {
+                channelSftp.disconnect();
+            }
+            if (session != null) {
+                session.disconnect();
+            }
+        }
+    }
+
+    static void downloadFilesFromScpServer(String username, String hostname, int port, String password,
+            String remoteFolderPath, String localFolderPath) {
+        Session session = null;
+        ChannelSftp channelSftp = null;
+        JSch jsch = new JSch();
+        try {
+            session = jsch.getSession(username, hostname, port);
+            session.setPassword(password);
+            Properties config = new Properties();
+            config.put("StrictHostKeyChecking", "no");
+            session.setConfig(config);
+            session.connect();
+            System.out.println("Session connected");
+
+            channelSftp = (ChannelSftp) session.openChannel("sftp");
+            channelSftp.connect();
+            System.out.println("Connected");
+
+            downloadFromFolder(channelSftp, remoteFolderPath, localFolderPath);
+        
+                     try {
+                Class.forName("org.postgresql.Driver");
+                Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/med", "aya", "123");
+                System.out.println("Connected");
+                LocalDateTime currentDateTime = getCurrentDateTime();
+                Statement stmt = con.createStatement();
+                String queryString = "insert into logs values ('" + currentDateTime + "' , '" + hostname + "' , '" + remoteFolderPath + "' ,'" + localFolderPath + "' )";
+                stmt.executeUpdate(queryString);
+            } catch (ClassNotFoundException | SQLException ex) {
+                Logger.getLogger(Bsmalah.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        
+        
+        
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (channelSftp != null) {
+                channelSftp.disconnect();
+            }
+            if (session != null) {
+                session.disconnect();
+            }
+        }
+    }
+
+    static void uploadFilesToFtpServer(String server, int port, String username, String password,
+            String localFolderPath, String remoteFolderPath) {
+        FTPClient ftpClient = new FTPClient();
+        try {
+            ftpClient.connect(server, port);
+            ftpClient.login(username, password);
+            ftpClient.enterLocalPassiveMode();
+            ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+
+            // Change working directory to remote folder
+            ftpClient.changeWorkingDirectory(remoteFolderPath);
+
+            File localFolder = new File(localFolderPath);
+            if (localFolder.isDirectory()) {
+                File[] files = localFolder.listFiles();
+                if (files != null) {
+                    for (File file : files) {
+                        if (file.isFile()) {
+                            uploadFile(ftpClient, file);
+                        }
+                    }
+                }
+            }
+
+            ftpClient.logout();
+        
+                             try {
+                Class.forName("org.postgresql.Driver");
+                Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/med", "aya", "123");
+                System.out.println("Connected");
+                LocalDateTime currentDateTime = getCurrentDateTime();
+                Statement stmt = con.createStatement();
+                String queryString = "insert into logs values ('" + currentDateTime + "' , '" + server + "' , '" + remoteFolderPath + "' ,'" + localFolderPath + "' )";
+                stmt.executeUpdate(queryString);
+            } catch (ClassNotFoundException | SQLException ex) {
+                Logger.getLogger(Bsmalah.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (ftpClient.isConnected()) {
+                try {
+                    ftpClient.disconnect();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    static void downloadFilesFromFtpServer(String server, int port, String username, String password,
+            String remoteFolderPath, String localFolderPath) {
+        FTPClient ftpClient = new FTPClient();
+        try {
+            ftpClient.connect(server, port);
+            ftpClient.login(username, password);
+            ftpClient.enterLocalPassiveMode();
+            ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+
+            // Change working directory to remote folder
+            ftpClient.changeWorkingDirectory(remoteFolderPath);
+
+            // List files in the remote folder
+            String[] fileNames = ftpClient.listNames();
+
+            if (fileNames != null) {
+                for (String fileName : fileNames) {
+                    String remoteFilePath = remoteFolderPath + fileName;
+                    String localFilePath = localFolderPath + fileName;
+
+                    try (OutputStream outputStream = new FileOutputStream(localFilePath)) {
+                        // Download the file from the FTP server
+                        boolean isFileDownloaded = ftpClient.retrieveFile(remoteFilePath, outputStream);
+
+                        if (isFileDownloaded) {
+                            System.out.println("Downloaded: " + fileName);
+                        } else {
+                            System.out.println("Failed to download: " + fileName);
+                        }
+                    }
+                }
+            }
+
+            ftpClient.logout();
+        
+                
+                             try {
+                Class.forName("org.postgresql.Driver");
+                Connection con = DriverManager.getConnection("jdbc:postgresql://localhost:5432/med", "aya", "123");
+                System.out.println("Connected");
+                LocalDateTime currentDateTime = getCurrentDateTime();
+                Statement stmt = con.createStatement();
+                String queryString = "insert into logs values ('" + currentDateTime + "' , '" + server + "' , '" + remoteFolderPath + "' ,'" + localFolderPath + "' )";
+                stmt.executeUpdate(queryString);
+            } catch (ClassNotFoundException | SQLException ex) {
+                Logger.getLogger(Bsmalah.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (ftpClient.isConnected()) {
+                try {
+                    ftpClient.disconnect();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public static void deleteFileOnFTPServer(String server, int port, String username, String password, String filePath) {
+        try {
+            // Create a socket connection to the FTP server
+            Socket socket = new Socket(server, port);
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+            // Read the welcome message from the server
+            String response = in.readLine();
+            System.out.println(response);
+
+            // Send the username
+            out.println("USER " + username);
+            response = in.readLine();
+            System.out.println(response);
+
+            // Send the password
+            out.println("PASS " + password);
+            response = in.readLine();
+            System.out.println(response);
+
+            // Send the FTP command to delete the file
+            out.println("DELE " + filePath);
+            response = in.readLine();
+            System.out.println(response);
+
+            // Check the response code
+            if (response.startsWith("2")) {
+                // The file was deleted successfully
+                System.out.println("File deleted successfully");
+            } else {
+                // The file could not be deleted
+                System.out.println("File could not be deleted");
+            }
+
+            // Close the socket connection
+            socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 //    public static List<String> listFilesOnSCPServer(String serverIp, int port, String username, String password, String remoteFilePath) {
 //        List<String> fileNames = new ArrayList<>();
 //
