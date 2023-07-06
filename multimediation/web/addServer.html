@@ -1,0 +1,268 @@
+
+<!--<!DOCTYPE html>-->
+<html>
+<head>
+    <title>Add Server</title>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
+            font-family: Roboto, Arial, sans-serif;
+            font-size: 14px;
+            color: #666;
+        }
+
+        input, textarea {
+            outline: none;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background: #5a7233;
+        }
+
+        h1 {
+            margin-top: 0;
+            font-weight: 500;
+        }
+
+/*        form {
+            position: relative;
+            width: 85%;
+            border-radius: 30px;
+            background: #fff;
+        }*/
+        form {
+            position: relative;
+            width: 85%;
+            border-radius: 30px;
+            background: #fff;
+            margin-left: 15%;
+    
+        }
+
+        .form-left-decoration,
+        .form-right-decoration {
+            content: "";
+            position: absolute;
+            width: 50px;
+            height: 20px;
+            border-radius: 20px;
+            background: #5a7233;
+        }
+
+        .form-left-decoration {
+            bottom: 60px;
+            left: -30px;
+        }
+
+        .form-right-decoration {
+            top: 60px;
+            right: -30px;
+        }
+
+        .form-left-decoration:before,
+        .form-left-decoration:after,
+        .form-right-decoration:before,
+        .form-right-decoration:after {
+            content: "";
+            position: absolute;
+            width: 50px;
+            height: 20px;
+            border-radius: 30px;
+            background: #fff;
+        }
+
+        .form-left-decoration:before {
+            top: -20px;
+        }
+
+        .form-left-decoration:after {
+            top: 20px;
+            left: 10px;
+        }
+
+        .form-right-decoration:before {
+            top: -20px;
+            right: 0;
+        }
+
+        .form-right-decoration:after {
+            top: 20px;
+            right: 10px;
+        }
+
+        .circle {
+            position: absolute;
+            bottom: 80px;
+            left: -55px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #fff;
+        }
+
+        .form-inner {
+            padding: 40px;
+        }
+
+        .form-inner input,
+        .form-inner textarea,
+        .form-inner select {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 20px;
+            background: #d0dfe8;
+        }
+
+        .form-inner textarea {
+            resize: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 20px;
+            border-radius: 20px;
+            border: none;
+            border-bottom: 4px solid #3e4f24;
+            background: #5a7233;
+            font-size: 16px;
+            font-weight: 400;
+            color: #fff;
+        }
+
+        button:hover {
+            background: #3e4f24;
+        }
+
+        @media (min-width: 568px) {
+            form {
+                width: 60%;
+            }
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 15%;
+            background: #3e4f24;
+            padding: 20px;
+            color: #fff;
+        }
+
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar ul li {
+            margin-bottom: 10px;
+        }
+
+        .sidebar ul li a {
+            text-decoration: none;
+            color: #fff;
+            font-weight: bold;
+        }
+    </style>
+
+    <script>
+        function validateForm() {
+            var serverName = document.forms["serverForm"]["server_name"].value;
+            var ipAddress = document.forms["serverForm"]["ip_address"].value;
+            var portNumber = document.forms["serverForm"]["port_number"].value;
+            var userName = document.forms["serverForm"]["userName"].value;
+            var password = document.forms["serverForm"]["password"].value;
+            var cdrLocation = document.forms["serverForm"]["cdr_location"].value;
+            var usedProtocol = document.forms["serverForm"]["used_protocol"].value;
+
+            if (serverName === "" || ipAddress === "" || portNumber === "" || userName === "" || password === "" || cdrLocation === "" || usedProtocol === "") {
+                alert("Please fill in all fields");
+                return false;
+            }
+
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function () {
+                if (this.readyState === 4) {
+                    if (this.status === 200) {
+                        var response = this.responseText;
+                        if (response.trim() === "success") {
+                            alert("Server added successfully.");
+                        } else {
+                            alert("Failed to add server.");
+                        }
+                    } else {
+                        alert("Failed process.");
+                    }
+                }
+            };
+            xhttp.open("POST", "addServer", true);
+            xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            xhttp.send(
+                "server_name=" + encodeURIComponent(serverName) +
+                "&ip_address=" + encodeURIComponent(ipAddress) +
+                "&port_number=" + encodeURIComponent(portNumber) +
+                "&userName=" + encodeURIComponent(userName) +
+                "&password=" + encodeURIComponent(password) +
+                "&cdr_location=" + encodeURIComponent(cdrLocation) +
+                "&used_protocol=" + encodeURIComponent(usedProtocol)
+            );
+
+            return false;
+        }
+    </script>
+</head>
+<body>
+        <div class="sidebar">
+    <ul>
+        <!-- Updated links with page URLs -->
+        <li><a href="serverHome.html">Main Menu</a></li>
+        <li><a href="information.html">Mediation System</a></li>
+    </ul>
+</div>
+    
+<form name="serverForm" method="POST" action="addServer" onsubmit="return validateForm();">
+    <div class="form-left-decoration"></div>
+    <div class="form-right-decoration"></div>
+    <div class="circle"></div>
+    <div class="form-inner">
+        <h1>Mediation-System</h1>
+        <p>Enter server details:</p>
+        <input type="text" name="server_name" placeholder="Server Name" required>
+        <input type="text" name="ip_address" placeholder="IP Address" required>
+        <input type="text" name="port_number" placeholder="Port Number" required>
+        <input type="text" name="userName" placeholder="Username" required>
+        <input type="password" name="password" placeholder="Password" required>
+        <input type="text" name="cdr_location" placeholder="CDR Location" required>
+        <div style="position: relative;">
+            <select name="used_protocol" required>
+                <option value="" selected disabled>Select Protocol</option>
+                <option value="FTP">FTP</option>
+                <option value="SCP">SCP</option>
+            </select>
+            <span style="position: absolute; top: 50%; right: 10px; transform: translateY(-50%); pointer-events: none;">
+                &#9662;
+            </span>
+        </div>
+        <button type="submit">Add Server</button>
+    </div>
+</form>
+</body>
+</html>
+
+
